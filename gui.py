@@ -1,14 +1,22 @@
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
+from matplotlib.gridspec import GridSpec
 
 
 class Visualizer:
-    def __init__(self, system):
+    def __init__(self, system, dispatcher):
         self.system = system
+        self.dispatcher = dispatcher
         # 设置窗口大小和DPI
         plt.rcParams["figure.dpi"] = 100  # 确保显示清晰度
-        self.fig, self.ax = plt.subplots(figsize=(10, 10), facecolor="white")
+
+        # 使用GridSpec创建左右分屏布局
+        self.fig = plt.figure(figsize=(11, 10), facecolor="white")
+        gs = GridSpec(1, 2, width_ratios=[8, 2], wspace=0.05)
+        self.ax = self.fig.add_subplot(gs[0])  # 左侧动画区域
+        self.ax_right = self.fig.add_subplot(gs[1])  # 右侧任务区域
+
         self.info_annotations = []  # 存储信息文本对象
         self.offset_states = {}  # 偏移状态记录
         # 正确设置窗口标题（兼容不同后端）
@@ -18,11 +26,25 @@ class Visualizer:
         (self.track_line,) = self.ax.plot([], [], "k-", lw=2, solid_joinstyle="round")
         self.vehicle_patches = []
         self.text_annotations = []  # 存储文本对象
+        self.task_texts = []  # 存储任务文本对象
 
         # 初始化坐标范围
         self.x_min, self.x_max = np.inf, -np.inf
         self.y_min, self.y_max = np.inf, -np.inf
         self.setup_plot()
+        # 初始化任务面板
+        self.init_task_panel()
+
+    def init_task_panel(self):
+        """初始化任务列表区域"""
+        self.ax_right.axis("off")
+        self.ax_right.set_xlim(0, 1)
+        self.ax_right.set_ylim(0, 1)
+
+        # 绘制表头
+        self.ax_right.text(
+            0.15, 0.95, "Tasks Queue", fontsize=12, weight="bold", color="#2F4F4F"
+        )
 
     def setup_plot(self):
         """初始化画面最初点位信息"""
@@ -191,6 +213,42 @@ class Visualizer:
         face_color = edge_color if rgv.carry else "none"
         return x, y, theta, edge_color, face_color
 
+    def update_task_panel(self):
+        """更新任务列表内容"""
+        # 清空旧内容但保留表头
+        for txt in self.task_texts:
+            txt.remove()
+        self.task_texts = []
+
+        queue = self.dispatcher.show_tasks()  # 获取任务数据
+        y_pos = 0.90  # 起始Y坐标
+
+        for q in queue:
+            # 构造显示字符串
+            main_part = f"{q['task'].start}→{q['task'].end}"
+            state_part = f" {q['task'].state}"
+
+            # 分两部分绘制不同颜色
+            task_text = self.ax_right.text(
+                0.1,
+                y_pos,
+                main_part,
+                fontsize=10,
+                color="black",
+                transform=self.ax_right.transAxes,
+            )
+            state_text = self.ax_right.text(
+                0.4,
+                y_pos,  # 粗略计算位置
+                state_part,
+                fontsize=10,
+                color=q["color"],
+                transform=self.ax_right.transAxes,
+            )
+
+            self.task_texts.extend([task_text, state_text])
+            y_pos -= 0.04  # 行间距
+
     def update_animation(self, frame):
         """更新1帧动画"""
         for i, vehicle in enumerate(self.system.vehicles):
@@ -221,7 +279,10 @@ class Visualizer:
             txt.set_position((x + dx, y + dy))
             txt.set_text(f"ID: {vehicle.id}{vehicle.get_task()}")  # 更新状态
 
-        return self.vehicle_patches + self.info_annotations
+        # 更新任务面板
+        self.update_task_panel()
+
+        return self.vehicle_patches + self.info_annotations + self.task_texts
 
     def calculate_text_offset(self, vehicle, theta):
         # 获取前车对象

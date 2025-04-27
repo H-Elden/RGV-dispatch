@@ -55,7 +55,7 @@ def load_tasks():
 
 def vis(system, dispatcher, tasks):
     # 创建可视化器
-    visualizer = Visualizer(system)
+    visualizer = Visualizer(system, dispatcher)
 
     # 仿真参数
     sim_time = 0

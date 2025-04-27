@@ -66,3 +66,27 @@ class Dispatcher:
 
     def best_sort(self, tasks):
         return tasks
+
+    def show_tasks(self):
+        queue = []
+        for t in self.task_queue:
+            if t.state == "queued":
+                queue.append({"task": t, "color": "orange"})
+            elif t.state == "pending":
+                queue.append({"task": t, "color": "blue"})
+            elif t.state == "transporting":
+                queue.append({"task": t, "color": "green"})
+            elif t.state == "finished":
+                queue.append({"task": t, "color": "grey"})
+        num = 0
+        for q in queue:
+            if q["task"].state == "finished":
+                num += 1
+            else:
+                break
+        num = max(0, num - 2)
+        # 删去finished
+        queue = queue[num:]
+        # 只保留前20个任务
+        queue = queue[:20]
+        return queue
