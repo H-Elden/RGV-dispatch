@@ -58,10 +58,10 @@ def vis(system, dispatcher, tasks):
     visualizer = Visualizer(system, dispatcher)
 
     # 仿真参数
-    sim_time = 0
+    sim_time = 0  # 单位毫秒
     ani_speed = 100  # 动画倍速
-    dt = 0.1  # 时间步长（秒）
-    task_interval = 10  # 每10秒添加一个任务
+    dt = 100  # 时间步长（毫秒）
+    task_interval = 10000  # 每10秒添加一个任务（单位毫秒）
     current_task_index = 0
 
     def update(frame):
@@ -75,16 +75,16 @@ def vis(system, dispatcher, tasks):
             task_start, task_end = tasks[current_task_index]
             dispatcher.add_task(task_start, task_end)
             print(
-                f"\n[{sim_time:.1f}s] \033[33m添加新任务：{task_start} -> {task_end}\033[0m"
+                f"\n[{sim_time/1000:.1f}s] \033[33m添加新任务：{task_start} -> {task_end}\033[0m"
             )
             current_task_index += 1
 
         # 2. 调度器分配任务
-        dispatcher.assign_task(sim_time * 1000)
+        dispatcher.assign_task(sim_time)
 
         # 3. 更新所有车辆状态（根据dt计算）
         for vehicle in system.vehicles:
-            vehicle.update(dt * 1000)  # 转换为毫秒
+            vehicle.update(dt)
 
         # 4. 更新仿真时间
         sim_time += dt
@@ -93,7 +93,7 @@ def vis(system, dispatcher, tasks):
         if current_task_index == len(tasks):
             if all(t.state == "finished" for t in dispatcher.task_queue):
                 print(f"\n\033[32m--- 仿真完成 ---\033[0m")
-                print(f"总耗时：{sim_time:.1f}秒")
+                print(f"总耗时：{sim_time/1000:.1f}秒")
                 print(f"任务总数：{len(dispatcher.task_queue)}")
                 simulation_done = True
                 ani.event_source.stop()  # 终止动画
@@ -108,7 +108,7 @@ def vis(system, dispatcher, tasks):
         update,
         frames=itertools.count(),  # 无限帧
         # frames=1,
-        interval=dt * 1000 / ani_speed,  # 每帧间隔（毫秒）
+        interval=dt / ani_speed,  # 每帧间隔（毫秒）
         blit=True,
         cache_frame_data=False,
     )
@@ -118,8 +118,8 @@ def vis(system, dispatcher, tasks):
 def unvis(system, dispatcher, tasks):
     # 仿真参数
     sim_time = 0
-    dt = 0.1  # 时间步长（秒）
-    task_interval = 10  # 每10秒添加一个任务
+    dt = 100  # 时间步长（毫秒）
+    task_interval = 10000  # 每10秒添加一个任务
     current_task_index = 0
     while True:
         # 1. 添加新任务（每10秒添加一个）
@@ -130,16 +130,16 @@ def unvis(system, dispatcher, tasks):
             task_start, task_end = tasks[current_task_index]
             dispatcher.add_task(task_start, task_end)
             print(
-                f"[{sim_time:.1f}s] \033[33m添加新任务：{task_start} -> {task_end}\033[0m"
+                f"[{sim_time/1000:.1f}s] \033[33m添加新任务：{task_start} -> {task_end}\033[0m"
             )
             current_task_index += 1
 
         # 2. 调度器分配任务
-        dispatcher.assign_task(sim_time * 1000)
+        dispatcher.assign_task(sim_time)
 
         # 3. 更新所有车辆状态（根据dt计算）
         for vehicle in system.vehicles:
-            vehicle.update(dt * 1000)  # 转换为毫秒
+            vehicle.update(dt)
 
         # 4. 更新仿真时间
         sim_time += dt
@@ -148,7 +148,7 @@ def unvis(system, dispatcher, tasks):
         if current_task_index == len(tasks):
             if all(t.state == "finished" for t in dispatcher.task_queue):
                 print(f"\n\033[32m--- 仿真完成 ---\033[0m")
-                print(f"总耗时：{sim_time:.1f}秒")
+                print(f"总耗时：{sim_time/1000:.1f}秒")
                 print(f"任务总数：{len(dispatcher.task_queue)}")
                 return
 

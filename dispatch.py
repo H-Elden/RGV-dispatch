@@ -20,6 +20,7 @@ class Dispatcher:
         self.task_queue = []
         self.current_sorted_tasks = []  # 维护当前最优任务序列
         self.need_resort = True  # 是否需要重新排序的标记
+        self.time = 0  # 当前时间（毫秒）
 
     def add_task(self, task_start, task_end):
         """添加新任务并标记需要重新排序"""
@@ -27,6 +28,7 @@ class Dispatcher:
         self.need_resort = True
 
     def assign_task(self, time):
+        self.time = time
         # 动态决定是否需要重新排序
         if self.need_resort or not self.current_sorted_tasks:
             # 筛选待处理任务
@@ -90,3 +92,50 @@ class Dispatcher:
         # 只保留前20个任务
         queue = queue[:20]
         return queue
+
+    def get_time(self):
+        time_ms = self.time
+        if time_ms < 1000:
+            return f"{time_ms}ms"
+        elif time_ms < 60 * 1000:
+            seconds = time_ms / 1000
+            return f"{seconds:.1f}s"
+        elif time_ms < 3600 * 1000:
+            minutes = time_ms // (60 * 1000)
+            remaining = time_ms % (60 * 1000)
+            seconds = remaining / 1000
+            return f"{minutes}m{seconds:.1f}s"
+        elif time_ms < 24 * 3600 * 1000:
+            hours = time_ms // (3600 * 1000)
+            remaining = time_ms % (3600 * 1000)
+            minutes = remaining // (60 * 1000)
+            remaining = remaining % (60 * 1000)
+            seconds = remaining / 1000
+            return f"{hours}h {minutes}m {seconds:.1f}s"
+        else:
+            days = time_ms // (24 * 3600 * 1000)
+            remaining = time_ms % (24 * 3600 * 1000)
+            hours = remaining // (3600 * 1000)
+            remaining = remaining % (3600 * 1000)
+            minutes = remaining // (60 * 1000)
+            remaining = remaining % (60 * 1000)
+            seconds = remaining / 1000
+
+            parts = []
+            parts.append(f"{days}day")
+            if hours > 0:
+                parts.append(f"{hours}h")
+
+            min_sec = []
+            if minutes > 0:
+                min_sec.append(f"{minutes}m")
+            # 始终显示秒部分
+            min_sec.append(f"{seconds:.1f}s")
+            min_sec_str = "".join(min_sec)
+
+            # 组合天/小时部分和分钟/秒部分
+            day_hour_str = "".join(parts)
+            if day_hour_str and min_sec_str:
+                return f"{day_hour_str} {min_sec_str}"
+            else:
+                return day_hour_str + min_sec_str

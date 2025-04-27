@@ -28,6 +28,25 @@ class Visualizer:
         self.text_annotations = []  # 存储文本对象
         self.task_texts = []  # 存储任务文本对象
 
+        # 添加时间文本初始化
+        self.time_text = self.ax.text(
+            0.95,
+            0.95,  # 使用相对坐标（右上角）
+            "",
+            transform=self.ax.transAxes,  # 使用轴坐标系
+            ha="right",  # 右对齐
+            va="top",  # 顶部对齐
+            fontsize=12,
+            color="#333333",
+            bbox=dict(
+                facecolor="white",
+                alpha=0.8,
+                edgecolor="lightgray",
+                boxstyle="round,pad=0.3",
+            ),
+            zorder=20,  # 确保在最上层
+        )
+
         # 初始化坐标范围
         self.x_min, self.x_max = np.inf, -np.inf
         self.y_min, self.y_max = np.inf, -np.inf
@@ -282,7 +301,16 @@ class Visualizer:
         # 更新任务面板
         self.update_task_panel()
 
-        return self.vehicle_patches + self.info_annotations + self.task_texts
+        # 更新时间显示
+        current_time = self.dispatcher.get_time()  # 假设系统提供该方法
+        self.time_text.set_text(f"Time: {current_time}")
+
+        return (
+            self.vehicle_patches
+            + self.info_annotations
+            + self.task_texts
+            + [self.time_text]
+        )
 
     def calculate_text_offset(self, vehicle, theta):
         # 获取前车对象
