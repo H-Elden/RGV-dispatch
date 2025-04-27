@@ -210,9 +210,8 @@ class Visualizer:
         self.text_annotations.append(txt)
         return txt
 
-    def get_vehicle_coords(self, rgv, dt=100):
+    def get_vehicle_coords(self, rgv):
         """实时获取小车坐标"""
-        rgv.update(dt)
         rgv.position = self.system.dist_to_pos(rgv.dist)
         x, y = rgv.position
 
@@ -271,7 +270,7 @@ class Visualizer:
     def update_animation(self, frame):
         """更新1帧动画"""
         for i, vehicle in enumerate(self.system.vehicles):
-            x, y, theta, ec, fc = self.get_vehicle_coords(vehicle, dt=100)
+            x, y, theta, ec, fc = self.get_vehicle_coords(vehicle)
             # 更新位置，计算矩形左下角坐标
             rect = self.vehicle_patches[i]
             half_length = rect.get_width() / 2
