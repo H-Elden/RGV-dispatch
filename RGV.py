@@ -83,10 +83,16 @@ class RGV:
         pos = self.system.stations[new_task.start]
         start_dist = self.system.pos_to_dist(pos)
         self.target = start_dist
-        # print(
-        #     f"[{self.task.now_time/1000:.1f}s] \033[36m分配任务 RGV {self.id}: {new_task.start} -> {new_task.end}\033[0m"
-        # )
-        print(f"{self.id},{new_task.start},{new_task.end}")
+        print(
+            f"[{self.task.now_time/1000:.1f}s] \033[36m分配任务 RGV {self.id}: {new_task.start} -> {new_task.end}\033[0m"
+        )
+        # print(f"{self.id},{new_task.start},{new_task.end}")
+
+    def get_task(self):
+        """用于动画显示的任务字符串"""
+        if self.task:
+            return f"\n{self.task.start}->{self.task.end}"
+        return ""
 
     def update(self, dt: int):
         """
@@ -117,17 +123,17 @@ class RGV:
                         pick_dist = self.system.pos_to_dist(pos)
                         if np.isclose(self.dist, pick_dist):
                             # 需要停车等待
-                            # if self.task.pick_time == 0:
-                            #     print(
-                            #         f"[{self.task.now_time/1000:.1f}s] \033[31mRGV {self.id} 在站台 {self.task.pick_station} 开始拣选！\033[0m"
-                            #     )
+                            if self.task.pick_time == 0:
+                                print(
+                                    f"[{self.task.now_time/1000:.1f}s] \033[31mRGV {self.id} 在站台 {self.task.pick_station} 开始拣选！\033[0m"
+                                )
                             if self.task.pick_time < 10 * 60 * 1000:  # 10分钟，毫秒
                                 self.task.pick_time += dt
                                 return
                     if self.carry:
-                        # print(
-                        #     f"[{self.task.now_time/1000:.1f}s] \033[32mRGV {self.id} 任务完成！{self.task.start} -> {self.task.end}\033[0m"
-                        # )
+                        print(
+                            f"[{self.task.now_time/1000:.1f}s] \033[32mRGV {self.id} 任务完成！{self.task.start} -> {self.task.end}\033[0m"
+                        )
                         self.task.state = "finished"
                         self.carry = False
                         self.task = None
@@ -137,9 +143,9 @@ class RGV:
                         pos = self.system.stations[self.task.end]
                         end_dist = self.system.pos_to_dist(pos)
                         self.target = end_dist
-                        # print(
-                        #     f"[{self.task.now_time/1000:.1f}s] \033[32mRGV {self.id} 在 {self.task.start} 站台处装载！\033[0m"
-                        # )
+                        print(
+                            f"[{self.task.now_time/1000:.1f}s] \033[32mRGV {self.id} 在 {self.task.start} 站台处装载！\033[0m"
+                        )
                 return
             # 没到目的地，但是停车了
             if distance_to_front <= min_gap + 5 and (

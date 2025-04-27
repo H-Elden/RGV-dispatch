@@ -74,9 +74,9 @@ def vis(system, dispatcher, tasks):
         ):
             task_start, task_end = tasks[current_task_index]
             dispatcher.add_task(task_start, task_end)
-            # print(
-            #     f"\n[{sim_time:.1f}s] \033[33m添加新任务：{task_start} -> {task_end}\033[0m"
-            # )
+            print(
+                f"\n[{sim_time:.1f}s] \033[33m添加新任务：{task_start} -> {task_end}\033[0m"
+            )
             current_task_index += 1
 
         # 2. 调度器分配任务
@@ -129,9 +129,9 @@ def unvis(system, dispatcher, tasks):
         ):
             task_start, task_end = tasks[current_task_index]
             dispatcher.add_task(task_start, task_end)
-            # print(
-            #     f"[{sim_time:.1f}s] \033[33m添加新任务：{task_start} -> {task_end}\033[0m"
-            # )
+            print(
+                f"[{sim_time:.1f}s] \033[33m添加新任务：{task_start} -> {task_end}\033[0m"
+            )
             current_task_index += 1
 
         # 2. 调度器分配任务
@@ -169,7 +169,7 @@ def main():
     # 创建调度器
     dispatcher = Dispatcher(system)
     start_time = time.time()  # 记录开始时间
-    unvis(system, dispatcher, tasks)
+    vis(system, dispatcher, tasks)
     end_time = time.time()  # 记录结束时间
 
     elapsed_time = end_time - start_time

@@ -9,7 +9,8 @@ class Visualizer:
         # 设置窗口大小和DPI
         plt.rcParams["figure.dpi"] = 100  # 确保显示清晰度
         self.fig, self.ax = plt.subplots(figsize=(10, 10), facecolor="white")
-
+        self.info_annotations = []  # 存储信息文本对象
+        self.offset_states = {}  # 偏移状态记录
         # 正确设置窗口标题（兼容不同后端）
         self.fig.canvas.manager.set_window_title("RGV simulation")
 
@@ -24,6 +25,7 @@ class Visualizer:
         self.setup_plot()
 
     def setup_plot(self):
+        """初始化画面最初点位信息"""
         # 绘制轨道并获取坐标范围
         x1, y1 = self.get_track_coords()
         x2, y2 = self.get_station_coords()
@@ -31,14 +33,17 @@ class Visualizer:
         y = y1 + y2
         self.track_line.set_data(x, y)
 
-        # 计算坐标范围（考虑10%边距）
-        margin = 0.1
+        # 计算坐标范围（考虑20%边距）
+        margin = 0.2
+
         x_range = max(x) - min(x)
         y_range = max(y) - min(y)
-        self.x_min = min(x) - x_range * margin
-        self.x_max = max(x) + x_range * margin
-        self.y_min = min(y) - y_range * margin
-        self.y_max = max(y) + y_range * margin
+
+        text_offset = 14000  # 小车ID和任务文字偏移量
+        self.x_min = min(x) - x_range * margin - text_offset
+        self.x_max = max(x) + x_range * margin + text_offset
+        self.y_min = min(y) - y_range * margin - text_offset
+        self.y_max = max(y) + y_range * margin + text_offset
 
         # 设置坐标轴属性
         self.ax.set_xlim(self.x_min, self.x_max)
@@ -65,10 +70,33 @@ class Visualizer:
             self.ax.add_patch(patch)
             self.vehicle_patches.append(patch)
 
+            # 创建信息文本（初始位置将在更新时设置）
+            txt = self.ax.text(
+                0,
+                0,  # 占位坐标
+                f"ID: {vehicle.id}{vehicle.get_task()}",
+                fontsize=8,
+                color="white",
+                ha="center",
+                va="center",
+                linespacing=1.2,
+                bbox=dict(
+                    facecolor="#1F77B4",
+                    alpha=0.9,
+                    edgecolor="none",
+                    boxstyle="round,pad=0.3",
+                ),
+                rotation=0,  # 固定不旋转
+                zorder=10,  # 确保文本在最上层
+            )
+            self.offset_states[vehicle.id] = 5000
+            self.info_annotations.append(txt)
+
         # 优化布局
-        plt.subplots_adjust(left=0.03, right=0.97, bottom=0.03, top=0.97)
+        plt.subplots_adjust(left=0.01, right=0.99, bottom=0.01, top=0.99)
 
     def get_track_coords(self):
+        """获取轨道段的直角坐标"""
         x_coords = []
         y_coords = []
         for segment in self.system.track:
@@ -102,6 +130,7 @@ class Visualizer:
         return x_coords, y_coords
 
     def get_station_coords(self):
+        """获取固定的站点的绘制线段，绘制站点编号"""
         x_coords = []
         y_coords = []
         for id, pos in self.system.stations.items():
@@ -121,7 +150,7 @@ class Visualizer:
         return x_coords, y_coords
 
     def add_text(self, x, y, text, offset=5, **kwargs):
-        """无边框版本的坐标标注方法"""
+        """无边框坐标标注方法"""
         # 自动计算文本对齐方式
         ha = "left" if x >= 0 else "right"
         va = "bottom" if y >= 0 else "top"
@@ -135,13 +164,14 @@ class Visualizer:
             color="darkblue",
             ha=ha,
             va=va,
-            **kwargs,  # 移除了bbox参数
+            **kwargs,
         )
         self.text_annotations.append(txt)
         return txt
 
     def get_vehicle_coords(self, rgv, dt=100):
-        # rgv.update(dt)
+        """实时获取小车坐标"""
+        rgv.update(dt)
         rgv.position = self.system.dist_to_pos(rgv.dist)
         x, y = rgv.position
 
@@ -162,6 +192,7 @@ class Visualizer:
         return x, y, theta, edge_color, face_color
 
     def update_animation(self, frame):
+        """更新1帧动画"""
         for i, vehicle in enumerate(self.system.vehicles):
             x, y, theta, ec, fc = self.get_vehicle_coords(vehicle, dt=100)
             # 更新位置，计算矩形左下角坐标
@@ -175,9 +206,62 @@ class Visualizer:
             # 更新颜色
             rect.set_edgecolor(ec)
             rect.set_facecolor(fc)
-        return self.vehicle_patches
+
+            # 动态计算偏移量
+            current_offset = self.calculate_text_offset(vehicle, theta)
+            self.offset_states[vehicle.id] = current_offset
+
+            # 计算实际偏移方向（保持左侧）
+            left_dir = theta + np.pi / 2
+            dx = current_offset * np.cos(left_dir)
+            dy = current_offset * np.sin(left_dir)
+
+            # 更新文本位置
+            txt = self.info_annotations[i]
+            txt.set_position((x + dx, y + dy))
+            txt.set_text(f"ID: {vehicle.id}{vehicle.get_task()}")  # 更新状态
+
+        return self.vehicle_patches + self.info_annotations
+
+    def calculate_text_offset(self, vehicle, theta):
+        # 获取前车对象
+        prev_vehicle = vehicle.get_front_vehicle()
+
+        # 判断方向是否水平（角度容差±30度）
+        is_horizontal = np.abs(theta % (2 * np.pi)) < np.radians(30) or np.abs(
+            theta % (2 * np.pi) - np.pi
+        ) < np.radians(30)
+
+        # 初始化默认偏移
+        base_offset = 6000  # 偏移量1
+        alt1_offset = 10000  # 偏移量2
+        alt2_offset = 14000  # 偏移量3
+
+        # 计算车距
+        distance = prev_vehicle.dist - vehicle.dist
+        if distance < 0:
+            distance += vehicle.system.max_dist
+
+        # 动态调整逻辑
+        if is_horizontal:
+            if distance < 7000:
+                if self.offset_states[prev_vehicle.id] == base_offset:
+                    return alt1_offset
+                elif self.offset_states[prev_vehicle.id] == alt1_offset:
+                    return alt2_offset
+                return base_offset
+            return base_offset
+        else:
+            if distance < 5000:
+                if self.offset_states[prev_vehicle.id] == base_offset:
+                    return alt1_offset
+                elif self.offset_states[prev_vehicle.id] == alt1_offset:
+                    return alt2_offset
+                return base_offset
+            return base_offset
 
     def start_animation(self):
+        """开启动画仿真"""
         ani = animation.FuncAnimation(
             self.fig,
             self.update_animation,
