@@ -86,6 +86,7 @@ class RGV:
         print(
             f"[{self.task.now_time/1000:.1f}s] \033[36m分配任务 RGV {self.id}: {new_task.start} -> {new_task.end}\033[0m"
         )
+        # 写入 dispatch.csv
         # print(f"{self.id},{new_task.start},{new_task.end}")
 
     def get_task(self):
@@ -102,10 +103,6 @@ class RGV:
 
         dt : int 时间间隔(ms)
         """
-        # if self.id == 4:
-        #     print(self.state, self.speed)
-        # if self.id == 4:
-        #     print("4 dist = ", self.dist)
         # 获取前车信息
         front_rgv = self.get_front_vehicle()
         distance_to_front = self.system.A_to_B(self.dist, front_rgv.dist)
@@ -337,7 +334,6 @@ class RGV:
         if dist >= self.system.max_dist:
             dist -= self.system.max_dist
         f_rgv.target = dist
-        # print(f"{f_rgv.id}: {f_rgv.target}")
 
     def calculate_safe_speed(self, distance):
         # 根据跟车距离计算安全速度

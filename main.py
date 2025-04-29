@@ -60,7 +60,7 @@ def vis(system, dispatcher, tasks):
     # 仿真参数
     sim_time = 0  # 单位毫秒
     ani_speed = 100  # 动画倍速
-    dt = 100  # 时间步长（毫秒）
+    dt = 200  # 时间步长（毫秒）
     task_interval = 10000  # 每10秒添加一个任务（单位毫秒）
     current_task_index = 0
 
@@ -106,9 +106,10 @@ def vis(system, dispatcher, tasks):
     ani = animation.FuncAnimation(
         visualizer.fig,
         update,
-        frames=itertools.count(),  # 无限帧
-        # frames=1,
-        interval=dt / ani_speed,  # 每帧间隔（毫秒）
+        # frames=itertools.count(),  # 无限帧
+        frames=1,
+        # interval=dt / ani_speed,  # 每帧间隔（毫秒）
+        interval=None,
         blit=True,
         cache_frame_data=False,
     )
@@ -164,7 +165,7 @@ def main():
     system.init_rgv()
     # 读入所有任务
     tasks = load_tasks()
-    tasks = tasks[:30]
+    tasks = tasks[:10]
 
     # 创建调度器
     dispatcher = Dispatcher(system)
@@ -175,6 +176,7 @@ def main():
     elapsed_time = end_time - start_time
     print(f"\n\n函数运行耗时: {elapsed_time:.6f} 秒")
 
+    # # 写入 result.csv
     # for i, t in enumerate(dispatcher.task_queue):
     #     print(
     #         f"{i+1},{t.start_time/1000:.1f},{t.now_time/1000:.1f},{(t.now_time - t.start_time)/1000:.1f}"
